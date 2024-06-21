@@ -13,5 +13,7 @@ export default PrivateRoute;
 //  this is private route which is wrapped to /profile route in App.jsx file
 //  here if the current user is present then /profle route will come to <Outlet/>   else we will navigate to /sign-in route
 
+//  when we will click on create listing we will navigate to /crreat-lisiting route will come to <Outlet/> if the user is present then only 
+
 // Navigate is component which is used to navigate
 // useNavigate is hook

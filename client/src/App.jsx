@@ -7,6 +7,7 @@ import About from './pages/About';
 import Profile from './pages/Profile';
 import Header from './components/Header';
 import PrivateRoute from './components/PrivateRoutes';
+import CreateListing from './pages/CreateListing';
 
 const App = () => {
   return (
@@ -20,6 +21,7 @@ const App = () => {
         {/* here we have used concept of Outlet see HeaderComponent and PrivateRoute component to gate clear idea */}
         <Route element={<PrivateRoute/>} >
           <Route path="/profile" element={<Profile/>}/>
+          <Route path="/create-listing" element={<CreateListing/>}/>
         </Route>
       </Routes>
     </BrowserRouter>
