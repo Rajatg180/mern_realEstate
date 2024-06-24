@@ -1,11 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
+import { useSelector, useDispatch } from "react-redux";
+import { getDownloadURL, getStorage, ref, uploadBytesResumable } from "firebase/storage";
 import { app } from "../firebase";
 import {
   updateUserStart,
@@ -18,10 +13,11 @@ import {
   signOutUserStart,
   signOutUserSuccess,
 } from "../redux/user/userSlice";
-import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
+import { ColorRing } from "react-loader-spinner"; // Ensure you have this component
 
 const Profile = () => {
+  const [pageLoading,setPageLoading]=useState(false);
   const { currentUser, loading, error } = useSelector((state) => state.user);
   const fileRef = useRef(null);
   const [file, setFile] = useState(undefined);
@@ -29,7 +25,7 @@ const Profile = () => {
   const [fileUploadError, setFileUploadError] = useState(false);
   const [formData, setFormData] = useState({});
   const [updateSuccess, setUpdateSuccess] = useState(false);
-  const [showListngsError, setShowListingsError] = useState(false);
+  const [showListingsError, setShowListingsError] = useState(false);
   const [userListings, setUserListings] = useState([]);
 
   const dispatch = useDispatch();
@@ -40,24 +36,16 @@ const Profile = () => {
     }
   }, [file]);
 
-  // uploading file to firebase storage
   const handleFileUpload = (file) => {
     const storage = getStorage(app);
-
-    // to avoid same file upload name
     const fileName = new Date().getTime() + file.name;
-
     const storageRef = ref(storage, fileName);
-
     const uploadTask = uploadBytesResumable(storageRef, file);
 
     uploadTask.on(
       "state_changed",
       (snapshot) => {
-        // Observe state change events such as progress, pause, and resume
-        // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         setFilePerc(Math.round(progress));
       },
       (error) => {
@@ -77,7 +65,6 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       dispatch(updateUserStart());
       const res = await fetch(`/api/user/update/${currentUser._id}`, {
@@ -92,12 +79,10 @@ const Profile = () => {
         dispatch(updateUserFailure(data.message));
         return;
       }
-
       dispatch(updateUserSuccess(data));
-
       setUpdateSuccess(true);
     } catch (err) {
-      dispatch(updateUserFailure(err.meessage));
+      dispatch(updateUserFailure(err.message));
     }
   };
 
@@ -134,16 +119,20 @@ const Profile = () => {
   };
 
   const handleShowListings = async () => {
+    setPageLoading(true);
     setShowListingsError(false);
     try {
       const res = await fetch(`/api/user/listings/${currentUser._id}`);
       const data = await res.json();
       if (data.success === false) {
+        setPageLoading(false);
         setShowListingsError(true);
         return;
       }
+      setPageLoading(false);
       setUserListings(data);
     } catch (err) {
+      setPageLoading(false);
       setShowListingsError(true);
     }
   };
@@ -158,19 +147,15 @@ const Profile = () => {
         console.log(data.message);
         return;
       }
-
-      setUserListings((prev) =>
-        prev.filter((listing) => listing._id !== listingId)
-      );
-
+      setUserListings((prev) => prev.filter((listing) => listing._id !== listingId));
     } catch (error) {
       console.log(error.message);
     }
   };
 
   return (
-    <div className="p-3 max-w-md mx-auto">
-      <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
+    <div className="p-5 my-10 max-w-lg mx-auto shadow-2xl rounded-lg">
+      <h1 className="text-4xl font-semibold text-slate-700 text-center my-7">Profile</h1>
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <input
           onChange={(e) => setFile(e.target.files[0])}
@@ -179,12 +164,11 @@ const Profile = () => {
           hidden
           accept="image/*"
         />
-        {/* in this we are taking the reference of above input */}
         <img
           onClick={() => fileRef.current.click()}
           src={formData.avatar || currentUser.avatar}
           alt="profile"
-          className="rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2"
+          className="rounded-full h-24 w-24  object-cover cursor-pointer self-center mt-2 shadow-2xl"
         />
         <p className="text-sm self-center">
           {fileUploadError ? (
@@ -202,34 +186,34 @@ const Profile = () => {
         <input
           type="text"
           defaultValue={currentUser.username}
-          placeholder="username"
+          placeholder="Username"
           id="username"
-          className="border p-3 rounded-lg"
+          className="border p-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
           onChange={handleChange}
         />
         <input
           type="email"
           defaultValue={currentUser.email}
-          placeholder="email"
+          placeholder="Email"
           id="email"
-          className="border p-3 rounded-lg"
+          className="border p-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
           onChange={handleChange}
         />
         <input
-          type="text"
-          placeholder="password"
+          type="password"
+          placeholder="Password"
           id="password"
-          className="border p-3 rounded-lg"
+          className="border p-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
           onChange={handleChange}
         />
         <button
           disabled={loading}
-          className="bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80"
+          className="bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80 shadow-md"
         >
           {loading ? "Loading..." : "Update"}
         </button>
         <Link
-          className="bg-green-700 text-white rounded-lg p-3 uppercase hover:opacity-95 text-center"
+          className="bg-green-700 text-white rounded-lg p-3 uppercase hover:opacity-95 text-center shadow-md"
           to={"/create-listing"}
         >
           Create Listing
@@ -238,11 +222,14 @@ const Profile = () => {
       <div className="flex justify-between mt-5">
         <span
           onClick={handleDeleteUser}
-          className="text-red-700 cursor-pointer "
+          className="text-red-700 font-semibold cursor-pointer hover:underline"
         >
           Delete Account
         </span>
-        <span onClick={handleSignOut} className="text-red-700 cursor-pointer ">
+        <span
+          onClick={handleSignOut}
+          className="text-red-700 font-semibold cursor-pointer hover:underline"
+        >
           Sign out
         </span>
       </div>
@@ -250,49 +237,61 @@ const Profile = () => {
       <p className="text-green-700 mt-5">
         {updateSuccess ? "User is updated successfully!" : ""}
       </p>
-      <button onClick={handleShowListings} className="text-green-700 w-full">
+      <button onClick={handleShowListings} className="bg-slate-700 text-white w-full p-3 rounded-lg mt-5 shadow-md hover:opacity-95">
         Show Listings
       </button>
       <p className="text-red-700 mt-5">
-        {showListngsError ? "Error showing listings" : ""}
+        {showListingsError ? "Error showing listings" : ""}
       </p>
       {userListings && userListings.length > 0 && (
-        <div className="flex flex-col gap-4">
-          <h1 className="text-center mt-7 text-2xl font-semibold">
-            Your Listings
-          </h1>
-          {userListings.map((listing) => (
-            <div
-              key={listing._id}
-              className="border rounded-lg p-3 flex justify-between items-center gap-4"
-            >
-              <Link to={`/listing/${listing._id}`}>
+        <div className="flex flex-col gap-4 mt-7">
+        <h1 className="text-center text-2xl font-semibold">Your Listings</h1>
+        {userListings.map((listing) => (
+          <div
+            key={listing._id}
+            className="border rounded-lg flex justify-between items-center gap-4 shadow-md"
+          >
+            <Link to={`/listing/${listing._id}`} className="flex-1">
+              <div className="flex items-center gap-4">
                 <img
                   src={listing.imageUrls[0]}
                   alt="listing cover"
-                  className="h-16 w-16 object-contain"
+                  className="h-16 w-16 object-cover rounded-lg"
                 />
-              </Link>
-              <Link
-                className="text-slate-700 font-semibold  hover:underline truncate flex-1"
-                to={`/listing/${listing._id}`}
-              >
-                <p>{listing.name}</p>
-              </Link>
-
-              <div className="flex flex-col item-center">
-                <button
-                  onClick={() => handleListingDelete(listing._id)}
-                  className="text-red-700 uppercase"
-                >
-                  Delete
-                </button>
-                <Link to={`/update-listing/${listing._id}`}>
-                  <button className="text-green-700 uppercase">Edit</button>
-                </Link>
+                <p className="text-slate-700 text-md font-semibold hover:underline truncate">
+                  {listing.name}
+                </p>
               </div>
+            </Link>
+            <div className="flex flex-col items-center px-3">
+              <button
+                onClick={() => handleListingDelete(listing._id)}
+                className="text-red-700 uppercase hover:underline"
+              >
+                Delete
+              </button>
+              <Link to={`/update-listing/${listing._id}`}>
+                <button className="text-green-700 uppercase hover:underline">
+                  Edit
+                </button>
+              </Link>
             </div>
-          ))}
+          </div>
+        ))}
+      </div>
+      )}
+      {}
+      {pageLoading && (
+        <div className="flex items-center justify-center ">
+          <ColorRing
+            visible={true}
+            height="80"
+            width="80"
+            ariaLabel="color-ring-loading"
+            wrapperStyle={{}}
+            wrapperClass="color-ring-wrapper"
+            colors={["#64748b", "#64748b", "#64748b", "#64748b", "#64748b"]}
+          />
         </div>
       )}
     </div>
